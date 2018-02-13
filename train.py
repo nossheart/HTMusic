@@ -7,14 +7,14 @@ import numpy
 import midi
 
 from tqdm import tqdm
-from htmusic.model import HTMusicModel
+from htmusic.api_model import HTMusicModel
 
 INPUT_DIR = './input/'
 OUTPUT_DIR = './output/'
 MODEL_DIR = './model/'
 CHECKPOINT_EVERY = 5
 NUM_STEPS = 20
-MODEL_PARAMS = './encoded_model.json'
+MODEL_PARAMS = './model_params.json'
 
 
 def get_arguments():
@@ -68,198 +68,11 @@ def main():
                 velocity = x[note].velocity
                 pitch = x[note].pitch
 
-                model.network.regions['EventEncoder'].setParameter(
-                    'sensedValue', event)
-                model.network.regions['TickEncoder'].setParameter(
-                    'sensedValue', tick)
-                model.network.regions['VelocityEncoder'].setParameter(
-                    'sensedValue', velocity)
-                model.network.regions['PitchEncoder'].setParameter(
-                    'sensedValue', pitch)
-                model.network.run(1)
-
-                # Getting active cells of TM and bucket indicies of encoders to feed classifiers
-                active_cells = numpy.array(
-                    model.network.regions['TemporalMemory'].getOutputData('bottomUpOut')).nonzero()[0]
-                event_bucket = numpy.array(
-                    model.network.regions['EventEncoder'].getOutputData('bucket'))
-                tick_bucket = numpy.array(
-                    model.network.regions['TickEncoder'].getOutputData('bucket'))
-                velocity_bucket = numpy.array(
-                    model.network.regions['VelocityEncoder'].getOutputData('bucket'))
-                pitch_bucket = numpy.array(
-                    model.network.regions['PitchEncoder'].getOutputData('bucket'))
-
-                # Getting up classifiers result
-                event_classifier_result = model.event_classifier.compute(
-                    recordNum=records_total,
-                    patternNZ=active_cells,
-                    classification={
-                        'bucketIdx': event_bucket[0],
-                        'actValue': event
-                    },
-                    learn=True,
-                    infer=False
-                )
-
-                tick_classifier_result = model.tick_classifier.compute(
-                    recordNum=records_total,
-                    patternNZ=active_cells,
-                    classification={
-                        'bucketIdx': tick_bucket[0],
-                        'actValue': tick
-                    },
-                    learn=True,
-                    infer=False
-                )
-
-                velocity_classifier_result = model.velocity_classifier.compute(
-                    recordNum=records_total,
-                    patternNZ=active_cells,
-                    classification={
-                        'bucketIdx': velocity_bucket[0],
-                        'actValue': velocity
-                    },
-                    learn=True,
-                    infer=False
-                )
-
-                pitch_classifier_result = model.pitch_classifier.compute(
-                    recordNum=records_total,
-                    patternNZ=active_cells,
-                    classification={
-                        'bucketIdx': pitch_bucket[0],
-                        'actValue': pitch
-                    },
-                    learn=True,
-                    infer=False
-                )
+                model.train(event, tick, velocity, pitch, records_total)
 
     print 'Generating midi file...'
-    # Instantiate a MIDI Pattern (contains a list of tracks)
-    pattern = midi.Pattern()
-    # Instantiate a MIDI Track (contains a list of MIDI events)
-    track = midi.Track()
-    # Append the track to the pattern
-    pattern.append(track)
-    seed = [144, 0, 120, 56]
-
-    for iters in tqdm(range(records_total, records_total + 3000)):
-        event = seed[0]
-        tick = seed[1]
-        velocity = seed[2]
-        pitch = seed[3]
-
-        model.network.regions['EventEncoder'].setParameter(
-            'sensedValue', event)
-        model.network.regions['TickEncoder'].setParameter(
-            'sensedValue', tick)
-        model.network.regions['VelocityEncoder'].setParameter(
-            'sensedValue', velocity)
-        model.network.regions['PitchEncoder'].setParameter(
-            'sensedValue', pitch)
-        model.network.run(1)
-
-        # Getting active cells of TM and bucket indicies of encoders to feed classifiers
-        active_cells = numpy.array(
-            model.network.regions['TemporalMemory'].getOutputData('bottomUpOut')).nonzero()[0]
-
-        event_bucket = numpy.array(
-            model.network.regions['EventEncoder'].getOutputData('bucket'))
-        tick_bucket = numpy.array(
-            model.network.regions['TickEncoder'].getOutputData('bucket'))
-        velocity_bucket = numpy.array(
-            model.network.regions['VelocityEncoder'].getOutputData('bucket'))
-        pitch_bucket = numpy.array(
-            model.network.regions['PitchEncoder'].getOutputData('bucket'))
-
-        # print active_cells.nonzero()
-
-        # Getting up classifiers result
-        event_classifier_result = model.event_classifier.compute(
-            recordNum=iters,
-            patternNZ=active_cells,
-            classification={
-                'bucketIdx': event_bucket[0],
-                'actValue': event
-            },
-            learn=False,
-            infer=True
-        )
-
-        tick_classifier_result = model.tick_classifier.compute(
-            recordNum=iters,
-            patternNZ=active_cells,
-            classification={
-                'bucketIdx': tick_bucket[0],
-                'actValue': tick
-            },
-            learn=False,
-            infer=True
-        )
-
-        velocity_classifier_result = model.velocity_classifier.compute(
-            recordNum=iters,
-            patternNZ=active_cells,
-            classification={
-                'bucketIdx': velocity_bucket[0],
-                'actValue': velocity
-            },
-            learn=False,
-            infer=True
-        )
-
-        pitch_classifier_result = model.pitch_classifier.compute(
-            recordNum=iters,
-            patternNZ=active_cells,
-            classification={
-                'bucketIdx': pitch_bucket[0],
-                'actValue': pitch
-            },
-            learn=False,
-            infer=True
-        )
-
-        ev = event_classifier_result[1].argmax()
-        ti = tick_classifier_result[1].argmax()
-        ve = velocity_classifier_result[1].argmax()
-        pi = pitch_classifier_result[1].argmax()
-
-        # print tick_classifier_result
-        # print ev, ti, ve, pi
-
-        # print event_classifier_result['actualValues'][ev]
-        # print tick_classifier_result['actualValues'][ti]
-        # print velocity_classifier_result['actualValues'][ve]
-        # print pitch_classifier_result['actualValues'][pi]
-
-        # print('Event: {}, Tick: {}, Velocity: {}, Pitch: {}').format(event_classifier_result['actualValues'][ev],
-        #                                                             tick_classifier_result['actualValues'][ti],
-        #                                                             velocity_classifier_result['actualValues'][ve],
-        #                                                             pitch_classifier_result['actualValues'][pi])
-
-        if event_classifier_result['actualValues'][ev] == 144:
-            midi_event = midi.NoteOnEvent(tick=int(tick_classifier_result['actualValues'][ti]),
-                                          velocity=int(
-                                              velocity_classifier_result['actualValues'][ve]),
-                                          pitch=int(pitch_classifier_result['actualValues'][pi]))
-        else:
-            midi_event = midi.NoteOffEvent(tick=int(tick_classifier_result['actualValues'][ti]),
-                                           velocity=int(
-                                               velocity_classifier_result['actualValues'][ve]),
-                                           pitch=int(pitch_classifier_result['actualValues'][pi]))
-
-        track.append(midi_event)
-
-        seed = [event_classifier_result['actualValues'][ev], tick_classifier_result['actualValues'][ti],
-                velocity_classifier_result['actualValues'][ve], pitch_classifier_result['actualValues'][pi]]
-
-    # Add the end of track event, append it to the track
-    eot = midi.EndOfTrackEvent(tick=1)
-    track.append(eot)
-    # Save the pattern to disk
-    midi.write_midifile(output_dir + 'example.mid', pattern)
-
+    seed = [144, 0, 40, 56]
+    model.generate(seed, records_total, output_dir)
 
 if __name__ == '__main__':
     main()

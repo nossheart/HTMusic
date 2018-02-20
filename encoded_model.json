@@ -75,7 +75,7 @@
         "tick":{
             "verbosity": 0,
             "alpha": 0.001,
-            "actValueAlpha": 0.3
+            "actValueAlpha": 0.1
         },
         "velocity":{
             "verbosity": 0,

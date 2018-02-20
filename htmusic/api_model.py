@@ -4,9 +4,9 @@ from nupic.algorithms.spatial_pooler import SpatialPooler
 from nupic.algorithms.temporal_memory import TemporalMemory
 from nupic.encoders.scalar import ScalarEncoder
 
+import cPickle as pickle
 import json
 import numpy
-numpy.set_printoptions(threshold=numpy.nan)
 import midi
 from tqdm import tqdm
 
@@ -250,19 +250,6 @@ class HTMusicModel(object):
             ve = velocity_classifier_result[1].argmax()
             pi = pitch_classifier_result[1].argmax()
 
-            # print tick_classifier_result
-            # print ev, ti, ve, pi
-
-            # print event_classifier_result['actualValues'][ev]
-            # print tick_classifier_result['actualValues'][ti]
-            # print velocity_classifier_result['actualValues'][ve]
-            # print pitch_classifier_result['actualValues'][pi]
-
-            # print('Event: {}, Tick: {}, Velocity: {}, Pitch: {}').format(event_classifier_result['actualValues'][ev],
-            #                                                             tick_classifier_result['actualValues'][ti],
-            #                                                             velocity_classifier_result['actualValues'][ve],
-            #                                                             pitch_classifier_result['actualValues'][pi])
-
             if event_classifier_result['actualValues'][ev] == 144:
                 midi_event = midi.NoteOnEvent(tick=int(tick_classifier_result['actualValues'][ti]),
                                               velocity=int(
@@ -286,11 +273,25 @@ class HTMusicModel(object):
         midi.write_midifile(output_dir + 'example.mid', pattern)
 
 
-    def load_model(self):
+    def load_model(self, load_path):
         pass
 
     def save_model(self, save_path):
-        builder = SpatialPoolerProto.new_message()
-        self.network.regions['SpatialPooler'].getSelf().write(builder)
-        serializedMessage = builder.to_bytes_packed()
-        print serializedMessage
+        with open(save_path + 'sp.tmp', 'wb') as sp:
+            self.spatial_pooler.writeToFile(sp)
+       
+        with open(save_path + 'tm.tmp', 'wb') as tm:
+            self.temporal_memory.writeToFile(tm)
+    # def load_model(self, load_path):
+    #     with open("sp.tmp", "w") as sp:
+    #         self.spatial_pooler = SpatialPooler.readFromFile(sp)
+
+    #     # with open("tm.pkl", "w") as tm:
+    #     #     self.temporal_memory = pickle.load(tm)
+
+    # def save_model(self, save_path):
+    #     with open("sp.tmp", "wb") as sp:
+    #         self.spatial_pooler.writeToFile(sp)
+
+    #     # with open("tm.tmp", "wb") as tm:
+    #     #     self.temporal_memory.writeToFile(tm)

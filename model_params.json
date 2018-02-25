@@ -1,29 +1,20 @@
 {
     "Encoders":{
-        "event":{
-            "minValue": 128,
-            "maxValue": 144,
-            "clipInput": true,
-            "w": 11,
-            "n":500
-        },
-        "tick":{
-            "minValue":0,
-            "maxValue":6000,
-            "w":11,
-            "n":500
-        },
-        "velocity":{
+        "duration":{
             "minValue": 0,
-            "maxValue": 128,
-            "clipInput": true,
-            "w": 11,
+            "maxValue": 20,
+            "w":21,
             "n":500
         },
         "pitch":{
             "minValue": 0,
             "maxValue": 128,
-            "clipInput": true,
+            "w": 11,
+            "n":500
+        },
+        "velocity":{
+            "minValue": 0,
+            "maxValue": 128,
             "w": 11,
             "n":500
         }
@@ -67,22 +58,17 @@
         "pamLength": 1
     },
     "Classifiers":{
-        "event":{
-            "verbosity": 0,
-            "alpha": 0.001,
-            "actValueAlpha": 0.3
-        },
-        "tick":{
-            "verbosity": 0,
-            "alpha": 0.001,
-            "actValueAlpha": 0.1
-        },
-        "velocity":{
+        "duration":{
             "verbosity": 0,
             "alpha": 0.001,
             "actValueAlpha": 0.3
         },
         "pitch":{
+            "verbosity": 0,
+            "alpha": 0.001,
+            "actValueAlpha": 0.3
+        },
+        "velocity":{
             "verbosity": 0,
             "alpha": 0.001,
             "actValueAlpha": 0.3

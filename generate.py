@@ -2,9 +2,7 @@ import os
 import glob
 import argparse
 import json
-import utils
-import numpy
-import midi
+
 import random
 
 from tqdm import tqdm
@@ -12,7 +10,8 @@ from htmusic.network_model import HTMusicModel
 
 OUTPUT_DIR = './output/'
 MODEL_DIR = './model/'
-MODEL_PARAMS = './encoded_model.json'
+MODEL_PARAMS = './model_params.json'
+DURATION = 250
 
 def get_arguments():
     parser = argparse.ArgumentParser(
@@ -24,6 +23,8 @@ def get_arguments():
                         help='The directory containing trained HTM model or model to train')
     parser.add_argument('--model_params', type=str, default=MODEL_PARAMS,
                         help='JSON file containing parameters for model')
+    parser.add_argument('--duration', type=str, default=DURATION,
+                        help='Duration of MIDI composition in ticks')
 
     return parser.parse_args()
 
@@ -33,6 +34,7 @@ def main():
     output_dir = args.output_dir
     model_dir = args.model_dir
     model_params = args.model_params
+    composition_duration = args.duration
 
     if not os.path.exists(output_dir):
         raise Exception('Error: Invalid --output_dir, {} does not exist. Exiting.'.format(output_dir))
@@ -55,11 +57,10 @@ def main():
     random.seed()
     velocity = random.randint(0,128)
     pitch = random.randint(1,127)
-    seed = [144, 0, velocity, pitch]
+    note_duration = round(random.uniform(1,3), 2)
+    seed = [note_duration, velocity, pitch]
 
-    print seed
-    event_amount = 1000
-    model.generate(seed, output_dir, event_amount)
+    model.generate(seed, output_dir, composition_duration)
 
 if __name__ == '__main__':
     main()

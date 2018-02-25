@@ -95,7 +95,7 @@ def main():
 
                 model.train(duration, pitch, velocity)
 
-            if (_+1) % checkpoint_every_file == 0:
+            if (_+1) % checkpoint_every == 0:
                 print '\nSaving model'
                 model.save_model(model_dir)
 

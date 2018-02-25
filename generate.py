@@ -23,7 +23,7 @@ def get_arguments():
                         help='The directory containing trained HTM model or model to train')
     parser.add_argument('--model_params', type=str, default=MODEL_PARAMS,
                         help='JSON file containing parameters for model')
-    parser.add_argument('--duration', type=str, default=DURATION,
+    parser.add_argument('--duration', type=int, default=DURATION,
                         help='Duration of MIDI composition in ticks')
 
     return parser.parse_args()
